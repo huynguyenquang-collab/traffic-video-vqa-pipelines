@@ -1,0 +1,27 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+.ipynb_checkpoints/
+
+# Local data, models, and generated artifacts
+data/
+outputs/
+work/
+cache/
+artifacts/
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.onnx
+*.csv
+*.jsonl.tmp
+
+# Keep examples and documentation trackable
+!configs/*.yaml
+!configs/*.yml
+!configs/*.json

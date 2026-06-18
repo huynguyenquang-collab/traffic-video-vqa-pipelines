@@ -1,0 +1,17 @@
+pyyaml>=6.0
+tqdm>=4.66
+numpy>=1.24
+pillow>=10.0
+opencv-python>=4.8
+torch>=2.1
+transformers>=4.45
+datasets>=2.19
+rank-bm25>=0.2.2
+deep-translator>=1.11
+ultralytics>=8.2
+trl>=0.11
+
+# Required only for Qwen-VL LoRA fine-tuning.
+unsloth
+triton
+tokenizers>=0.22.0,<=0.23.0

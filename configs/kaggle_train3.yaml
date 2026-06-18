@@ -1,0 +1,37 @@
+# Convenience override for the original notebook layout on Kaggle.
+paths:
+  data_root: /kaggle/input/train3/train
+  train_annotations: train/train.json
+  public_test_annotations: train/train.json
+  video_root: .
+  work_dir: /kaggle/working
+  cache_dir: /kaggle/working/cache
+  output_dir: /kaggle/working/outputs
+  train_split: /kaggle/working/train_split.json
+  eval_split: /kaggle/working/eval_split.json
+  converted_train: /kaggle/working/converted_train_en.json
+  mixed_train: /kaggle/working/mixed_train_en.json
+  test_en: /kaggle/working/test_en.json
+  submission: /kaggle/working/submission.csv
+  frames_dir: /kaggle/working/train_frames
+  key_frames_dir: /kaggle/working/key_frames
+  crops_dir: /kaggle/working/cropped_signs
+  frames_log: /kaggle/working/extracted_frames_log.jsonl
+  translation_cache: /kaggle/working/translation_cache.json
+
+models:
+  base_vlm: /kaggle/input/qwen-3-vl/transformers/8b-instruct/1
+  cached_finetuned_vlm: /kaggle/input/datasets/huyqn12/cropped-zalo/qwen2-vl-7b-mixed-en
+  output_finetuned_vlm: /kaggle/working/qwen2-vl-7b-mixed-en
+  yolo_weights: /kaggle/input/besttraffic-real/best (2).pt
+
+traffic_sign_vqa:
+  jsonl: /kaggle/input/vqa-sign/traffic_vqa_qwen2vl (1).jsonl
+  image_new_root: /kaggle/input/traffic-sign-images/traffic_sign_images
+  translated_jsonl: /kaggle/working/traffic_vqa_en.jsonl
+
+rag:
+  ref_parquet_glob: /kaggle/input/ref_traffic_sign_rules/**/*.parquet
+  ref_corpus_cache: /kaggle/working/ref_corpus_en.json
+  sbert_cache: /kaggle/working/sbert_ref_embeds_en.pt
+  clip_image_cache: /kaggle/working/clip_img_embeds_en.pt

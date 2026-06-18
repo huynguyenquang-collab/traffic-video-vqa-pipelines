@@ -1,0 +1,93 @@
+seed: 42
+device: auto
+
+paths:
+  # Set this to the folder that contains train/, public_test/, private_test/, etc.
+  # Kaggle example: /kaggle/input/train3/train
+  # Local example: /mnt/datasets/zalo-ai-traffic
+  data_root: ./data
+
+  # Annotation files may contain relative video_path values. They are resolved
+  # against video_root first, then data_root.
+  train_annotations: train/train.json
+  public_test_annotations: public_test/test.json
+  private_test_annotations: private_test/test.json
+  video_root: .
+
+  work_dir: ./work
+  cache_dir: ./cache
+  output_dir: ./outputs
+
+  train_split: ./work/train_split.json
+  eval_split: ./work/eval_split.json
+  converted_train: ./work/converted_train_en.json
+  mixed_train: ./work/mixed_train_en.json
+  test_en: ./work/test_en.json
+  submission: ./outputs/submission.csv
+
+  frames_dir: ./work/train_frames
+  key_frames_dir: ./work/key_frames
+  crops_dir: ./work/cropped_signs
+  frames_log: ./work/extracted_frames_log.jsonl
+  translation_cache: ./cache/translation_cache.json
+
+models:
+  # Original notebook used Kaggle input:
+  # /kaggle/input/qwen-3-vl/transformers/8b-instruct/1
+  base_vlm: Qwen/Qwen2.5-VL-7B-Instruct
+  cached_finetuned_vlm: ./artifacts/qwen-vl-mixed-en
+  output_finetuned_vlm: ./outputs/qwen-vl-mixed-en
+  clip: openai/clip-vit-base-patch32
+  sentence_encoder: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+  yolo_weights: ./artifacts/best_traffic.pt
+
+data:
+  split_ratio: 0.8
+  split_by: video_path
+  keep_original_paths: true
+  write_relative_paths: true
+  train_frame_count: 4
+  frame_max_size: 2000
+  eval_ratio: 0.1
+
+traffic_sign_vqa:
+  enabled: true
+  jsonl: ./data/traffic_vqa_qwen2vl_fixed.jsonl
+  image_old_prefix: /kaggle/input/traffic_sign_images/
+  image_new_root: ./data/traffic_sign_images
+  translated_jsonl: ./work/traffic_vqa_en.jsonl
+
+rag:
+  enabled: true
+  top_k: 5
+  rrf_k: 60
+  ref_dataset: ghbihuy/vietnam_traffic_sign
+  ref_parquet_glob: ./data/ref_traffic_sign_rules/**/*.parquet
+  ref_corpus_cache: ./cache/ref_corpus_en.json
+  sbert_cache: ./cache/sbert_ref_embeds_en.pt
+  clip_image_cache: ./cache/clip_img_embeds_en.pt
+
+inference:
+  pipeline: micro_hint_rag
+  max_history: 3
+  vlm_max_size: 1280
+  num_candidates: 20
+  max_key_frames: 5
+  yolo_conf: 0.55
+  yolo_iou: 0.45
+  gated_confidence_threshold: 0.85
+
+training:
+  skip_if_cached: true
+  load_in_4bit: true
+  gradient_checkpointing: unsloth
+  lora_r: 16
+  lora_alpha: 16
+  lora_dropout: 0
+  batch_size: 2
+  gradient_accumulation_steps: 4
+  epochs: 3
+  warmup_ratio: 0.05
+  learning_rate: 0.0002
+  weight_decay: 0.01
+  max_length: 1024

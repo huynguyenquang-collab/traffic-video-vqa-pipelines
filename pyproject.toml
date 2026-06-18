@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zalo-traffic-vqa"
+version = "0.1.0"
+description = "Modular Zalo AI Challenge traffic video QA pipelines from the original Kaggle notebook."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "huynguyenquang-collab"}]
+dependencies = [
+  "pyyaml>=6.0",
+  "tqdm>=4.66",
+  "numpy>=1.24",
+  "pillow>=10.0",
+  "opencv-python>=4.8",
+  "torch>=2.1",
+  "transformers>=4.45",
+  "datasets>=2.19",
+  "rank-bm25>=0.2.2",
+  "deep-translator>=1.11",
+  "ultralytics>=8.2",
+  "trl>=0.11",
+]
+
+[project.optional-dependencies]
+finetune = [
+  "unsloth",
+  "triton",
+  "tokenizers>=0.22.0,<=0.23.0",
+]
+dev = [
+  "ruff>=0.5",
+  "pytest>=8.0",
+]
+
+[project.scripts]
+zalo-vqa = "zalo_traffic_vqa.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
