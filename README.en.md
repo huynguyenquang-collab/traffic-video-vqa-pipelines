@@ -1,18 +1,18 @@
-# Zalo Traffic Video QA
+# Traffic Video VQA
 
-Modular traffic video question-answering pipelines for the Zalo AI Challenge dataset. This repo was extracted from `notebooks/zaloaichallengfinal-5-5.ipynb` and reorganized so each module has one clear responsibility.
+Modular traffic video question-answering pipelines for the dataset. This repo was extracted from `notebooks/original_kaggle_notebook.ipynb` and reorganized so each module has one clear responsibility.
 
 ## What Is Inside
 
 - `configs/default.yaml`: portable config for local paths, caches, models, training, RAG, and inference.
 - `configs/kaggle_train3.yaml`: override matching the original Kaggle `train3` dataset layout.
-- `src/zalo_traffic_vqa/data.py`: JSON annotation IO, split-by-video, and path rebasing helpers.
-- `src/zalo_traffic_vqa/preprocess.py`: VI→EN translation, frame extraction, Qwen message dataset conversion, mixed training data creation.
-- `src/zalo_traffic_vqa/training.py`: Qwen-VL LoRA fine-tuning with Unsloth.
-- `src/zalo_traffic_vqa/video.py`: frame sampling, CLIP-selected key frames, YOLO sign crops.
-- `src/zalo_traffic_vqa/rag.py`: BM25 + SBERT + CLIP traffic-sign retrieval.
-- `src/zalo_traffic_vqa/pipelines.py`: no-finetune, no-RAG, Micro-Hint RAG, Gated Micro RAG, and Full RAG inference.
-- `notebooks/zaloaichallengfinal-5-5.ipynb`: original notebook preserved for auditability.
+- `src/traffic_video_vqa/data.py`: JSON annotation IO, split-by-video, and path rebasing helpers.
+- `src/traffic_video_vqa/preprocess.py`: VI→EN translation, frame extraction, Qwen message dataset conversion, mixed training data creation.
+- `src/traffic_video_vqa/training.py`: Qwen-VL LoRA fine-tuning with Unsloth.
+- `src/traffic_video_vqa/video.py`: frame sampling, CLIP-selected key frames, YOLO sign crops.
+- `src/traffic_video_vqa/rag.py`: BM25 + SBERT + CLIP traffic-sign retrieval.
+- `src/traffic_video_vqa/pipelines.py`: no-finetune, no-RAG, Micro-Hint RAG, Gated Micro RAG, and Full RAG inference.
+- `notebooks/original_kaggle_notebook.ipynb`: original notebook preserved for auditability.
 
 ## Dataset Layout
 
@@ -71,7 +71,7 @@ Current best notebook result on the held-out 326-item split:
 Prompt-only baseline using the base VLM from `models.base_vlm`. It does not load the fine-tuned checkpoint and does not use RAG. It still uses CLIP for key-frame selection and YOLO crops, matching the visual input style of the stronger pipelines.
 
 ```bash
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml infer \
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
   --pipeline no_finetune_prompt
 ```
 
@@ -95,23 +95,23 @@ Traditional reference retrieval with BM25, SBERT dense retrieval, CLIP visual re
 
 ```bash
 # Split train/eval by video, avoiding video leakage.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml split
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml split
 
 # Translate and convert video QA samples into Qwen message format.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml convert-train
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml convert-train
 
 # Mix video QA with optional traffic-sign VQA data.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml mix-train
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml mix-train
 
 # Fine-tune Qwen-VL with LoRA.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml train
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
 
 # Prepare public/private test annotations.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml prepare-test \
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml prepare-test \
   --source /path/to/test.json
 
 # Run inference and write submission.csv.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml infer \
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
   --pipeline micro_hint_rag
 ```
 

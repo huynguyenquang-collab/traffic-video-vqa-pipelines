@@ -1,18 +1,18 @@
-# Zalo Traffic Video QA
+# Traffic Video VQA
 
-Đây là bản repository hoá và module hoá từ notebook gốc `zaloaichallengfinal-5-5.ipynb`. Mục tiêu là giữ lại các pipeline đang cho kết quả tốt nhất, bỏ hard-code path kiểu Kaggle, và thêm một baseline không fine-tune chỉ dùng prompt.
+Đây là bản repository hoá và module hoá từ notebook gốc `original_kaggle_notebook.ipynb`. Mục tiêu là giữ lại các pipeline đang cho kết quả tốt nhất, bỏ hard-code path kiểu Kaggle, và thêm một baseline không fine-tune chỉ dùng prompt.
 
 ## Cấu Trúc Repo
 
 - `configs/default.yaml`: config portable cho path local, cache, model, training, RAG và inference.
 - `configs/kaggle_train3.yaml`: config override đúng layout Kaggle `train3` trong notebook gốc.
-- `src/zalo_traffic_vqa/data.py`: đọc/ghi JSON annotation, split theo video, xử lý và rebase path.
-- `src/zalo_traffic_vqa/preprocess.py`: dịch VI→EN, extract frame, convert sang Qwen message dataset, trộn data train.
-- `src/zalo_traffic_vqa/training.py`: fine-tune Qwen-VL bằng LoRA/Unsloth.
-- `src/zalo_traffic_vqa/video.py`: chọn key frame bằng CLIP, crop biển báo bằng YOLO.
-- `src/zalo_traffic_vqa/rag.py`: retrieval biển báo bằng BM25 + SBERT + CLIP + RRF.
-- `src/zalo_traffic_vqa/pipelines.py`: các pipeline inference.
-- `notebooks/zaloaichallengfinal-5-5.ipynb`: notebook gốc để đối chiếu.
+- `src/traffic_video_vqa/data.py`: đọc/ghi JSON annotation, split theo video, xử lý và rebase path.
+- `src/traffic_video_vqa/preprocess.py`: dịch VI→EN, extract frame, convert sang Qwen message dataset, trộn data train.
+- `src/traffic_video_vqa/training.py`: fine-tune Qwen-VL bằng LoRA/Unsloth.
+- `src/traffic_video_vqa/video.py`: chọn key frame bằng CLIP, crop biển báo bằng YOLO.
+- `src/traffic_video_vqa/rag.py`: retrieval biển báo bằng BM25 + SBERT + CLIP + RRF.
+- `src/traffic_video_vqa/pipelines.py`: các pipeline inference.
+- `notebooks/original_kaggle_notebook.ipynb`: notebook gốc để đối chiếu.
 
 ## Dữ Liệu
 
@@ -77,7 +77,7 @@ Kết quả notebook hiện tại trên split eval 326 mẫu:
 Baseline mới theo yêu cầu: dùng base VLM từ `models.base_vlm`, không load checkpoint fine-tuned, không dùng RAG. Pipeline vẫn dùng CLIP để chọn key frame và YOLO crop biển báo để input hình ảnh giống style pipeline mạnh hơn.
 
 ```bash
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml infer \
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
   --pipeline no_finetune_prompt
 ```
 
@@ -101,23 +101,23 @@ Pipeline RAG đầy đủ: BM25 + SBERT dense retrieval + CLIP visual retrieval 
 
 ```bash
 # Split train/eval theo video, tránh leak cùng video qua hai split.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml split
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml split
 
 # Dịch và convert video QA sang Qwen message format.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml convert-train
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml convert-train
 
 # Trộn video QA với traffic-sign VQA nếu bật trong config.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml mix-train
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml mix-train
 
 # Fine-tune Qwen-VL bằng LoRA.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml train
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
 
 # Chuẩn bị public/private test.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml prepare-test \
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml prepare-test \
   --source /path/to/test.json
 
 # Inference và ghi submission.csv.
-PYTHONPATH=src python -m zalo_traffic_vqa.cli -c configs/local.yaml infer \
+PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
   --pipeline micro_hint_rag
 ```
 

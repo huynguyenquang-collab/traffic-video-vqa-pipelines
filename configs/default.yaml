@@ -4,7 +4,7 @@ device: auto
 paths:
   # Set this to the folder that contains train/, public_test/, private_test/, etc.
   # Kaggle example: /kaggle/input/train3/train
-  # Local example: /mnt/datasets/zalo-ai-traffic
+  # Local example: /mnt/datasets/traffic-video-vqa
   data_root: ./data
 
   # Annotation files may contain relative video_path values. They are resolved

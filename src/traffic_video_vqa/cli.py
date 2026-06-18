@@ -17,7 +17,7 @@ PIPELINES = ("no_finetune_prompt", "no_rag", "micro_hint_rag", "gated_micro_rag"
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Zalo traffic video QA pipelines")
+    parser = argparse.ArgumentParser(description="Traffic video QA pipelines")
     parser.add_argument("-c", "--config", default=None, help="Path to YAML config override.")
     sub = parser.add_subparsers(dest="command", required=True)
 
