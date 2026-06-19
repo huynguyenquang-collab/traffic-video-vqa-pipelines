@@ -18,3 +18,10 @@ PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml run-prep
 PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
 PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer --pipeline micro_hint_rag
 ```
+
+Kaggle quick install:
+
+```bash
+pip install -q --force-reinstall "numpy>=1.26.4,<2.0"
+pip install -q -r requirements.txt
+```

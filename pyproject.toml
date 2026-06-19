@@ -11,9 +11,9 @@ requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "huynguyenquang-collab"}]
 dependencies = [
+  "numpy>=1.26.4,<2.0",
   "pyyaml>=6.0",
   "tqdm>=4.66",
-  "numpy>=1.24",
   "pillow>=10.0",
   "opencv-python>=4.8",
   "torch>=2.1",

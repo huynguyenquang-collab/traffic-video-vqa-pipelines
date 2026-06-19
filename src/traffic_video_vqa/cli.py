@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
+
+# Kaggle usually has TensorFlow installed. Transformers may auto-import it while
+# this project only needs the PyTorch path, which can expose NumPy ABI conflicts.
+os.environ.setdefault("USE_TF", "0")
+os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
+os.environ.setdefault("USE_JAX", "0")
 
 from .config import ensure_dirs, load_config
 from .preprocess import (
