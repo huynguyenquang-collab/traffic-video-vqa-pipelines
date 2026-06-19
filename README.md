@@ -25,3 +25,8 @@ Kaggle stable install:
 bash scripts/bootstrap_kaggle.sh
 bash scripts/run_kaggle_train3.sh
 ```
+
+If Kaggle reports a broken `ensurepip`/`wrapt` during virtualenv creation, the
+bootstrap script automatically falls back to `/kaggle/working/tvqa_site` and
+`scripts/run_kaggle_train3.sh` will use that fallback through
+`/kaggle/working/tvqa_env.sh`.
