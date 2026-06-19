@@ -3,11 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .compat import configure_runtime
 from .data import read_json, split_list
 
 
 def load_vlm(cfg: dict[str, Any], *, prefer_cached: bool = True):
     """Load the cached fine-tuned model if present, otherwise the configured base VLM."""
+    configure_runtime()
     from unsloth import FastVisionModel
 
     models = cfg["models"]
@@ -24,6 +26,7 @@ def load_vlm(cfg: dict[str, Any], *, prefer_cached: bool = True):
 
 def train_lora(cfg: dict[str, Any]) -> None:
     """Fine-tune Qwen-VL with the mixed English video/sign dataset."""
+    configure_runtime()
     from trl import SFTConfig, SFTTrainer
     from unsloth import FastVisionModel
     from unsloth.trainer import UnslothVisionDataCollator
@@ -89,6 +92,7 @@ def train_lora(cfg: dict[str, Any]) -> None:
 
 
 def set_for_inference(model):
+    configure_runtime()
     from unsloth import FastVisionModel
 
     return FastVisionModel.for_inference(model)

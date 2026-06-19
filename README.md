@@ -22,6 +22,5 @@ PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer --pip
 Kaggle quick install:
 
 ```bash
-pip install -q --force-reinstall "numpy>=1.26.4,<2.0"
 pip install -q -r requirements.txt
 ```
