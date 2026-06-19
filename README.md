@@ -19,8 +19,9 @@ PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
 PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer --pipeline micro_hint_rag
 ```
 
-Kaggle quick install:
+Kaggle stable install:
 
 ```bash
-pip install -q -r requirements.txt
+bash scripts/bootstrap_kaggle.sh
+bash scripts/run_kaggle_train3.sh
 ```

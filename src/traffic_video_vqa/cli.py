@@ -4,6 +4,9 @@ import argparse
 from pathlib import Path
 
 from .compat import configure_runtime
+
+configure_runtime()
+
 from .config import ensure_dirs, load_config
 from .preprocess import (
     build_mixed_training_dataset,
@@ -13,8 +16,6 @@ from .preprocess import (
 )
 from .training import load_vlm, set_for_inference, train_lora
 
-
-configure_runtime()
 
 PIPELINES = ("no_finetune_prompt", "no_rag", "micro_hint_rag", "gated_micro_rag", "full_rag")
 

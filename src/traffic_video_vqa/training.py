@@ -27,14 +27,14 @@ def load_vlm(cfg: dict[str, Any], *, prefer_cached: bool = True):
 def train_lora(cfg: dict[str, Any]) -> None:
     """Fine-tune Qwen-VL with the mixed English video/sign dataset."""
     configure_runtime()
-    from trl import SFTConfig, SFTTrainer
-    from unsloth import FastVisionModel
-    from unsloth.trainer import UnslothVisionDataCollator
-
     model, tokenizer, loaded_cached = load_vlm(cfg, prefer_cached=bool(cfg["training"]["skip_if_cached"]))
     if loaded_cached and cfg["training"]["skip_if_cached"]:
         print("Cached fine-tuned model found; skipping training.")
         return
+
+    from trl import SFTConfig, SFTTrainer
+    from unsloth import FastVisionModel
+    from unsloth.trainer import UnslothVisionDataCollator
 
     train_cfg = cfg["training"]
     dataset = read_json(cfg["paths"]["mixed_train"])
