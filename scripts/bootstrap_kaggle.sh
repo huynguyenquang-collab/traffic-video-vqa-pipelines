@@ -15,7 +15,15 @@ rm -f "$ENV_FILE"
 # pip operation removed wrapt, venv/ensurepip can fail before we get a clean env.
 python3 -m pip install -q --no-cache-dir wrapt || true
 
+venv_ok=0
+rm -rf "$VENV_DIR"
 if python3 -m venv "$VENV_DIR" --system-site-packages; then
+  if "$VENV_DIR/bin/python" -m pip --version >/dev/null 2>&1; then
+    venv_ok=1
+  fi
+fi
+
+if [ "$venv_ok" = "1" ]; then
   # shellcheck disable=SC1091
   . "$VENV_DIR/bin/activate"
 
@@ -28,8 +36,10 @@ export TVQA_EXTRA_PYTHONPATH=""
 EOF
 else
   echo "venv creation failed; falling back to an isolated PYTHONPATH target at $TARGET_DIR" >&2
+  rm -rf "$VENV_DIR"
   rm -rf "$TARGET_DIR"
   mkdir -p "$TARGET_DIR"
+  python3 -m pip install -q --no-cache-dir --target "$TARGET_DIR" wrapt
   python3 -m pip install -q --no-cache-dir --target "$TARGET_DIR" -c "$CONSTRAINTS" -r requirements.txt
 
   cat > "$ENV_FILE" <<EOF

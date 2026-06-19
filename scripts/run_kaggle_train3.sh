@@ -5,10 +5,13 @@ CONFIG="${1:-configs/kaggle_train3.yaml}"
 VENV_DIR="${VENV_DIR:-/kaggle/working/tvqa_venv}"
 ENV_FILE="${ENV_FILE:-/kaggle/working/tvqa_env.sh}"
 
-if [ -f "$ENV_FILE" ]; then
-  # shellcheck disable=SC1090
-  . "$ENV_FILE"
+if [ ! -f "$ENV_FILE" ]; then
+  echo "Missing $ENV_FILE. Run bootstrap first: bash scripts/bootstrap_kaggle.sh" >&2
+  exit 1
 fi
+
+# shellcheck disable=SC1090
+. "$ENV_FILE"
 
 PYTHON_BIN="${PYTHON_BIN:-${TVQA_PYTHON:-$VENV_DIR/bin/python}}"
 EXTRA_PYTHONPATH="${TVQA_EXTRA_PYTHONPATH:-}"
