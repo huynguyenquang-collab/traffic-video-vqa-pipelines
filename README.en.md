@@ -1,125 +1,74 @@
-# Traffic Video VQA
+# Traffic Video VQA Pipelines
 
-Modular traffic video question-answering pipelines for the dataset. This repo was extracted from `notebooks/original_kaggle_notebook.ipynb` and reorganized so each module has one clear responsibility.
+This repository contains Python refactors of two Kaggle notebooks:
 
-## What Is Inside
+1. `notebooks/yolo26.ipynb`: trains/tunes the YOLO traffic-sign detector.
+2. `notebooks/vqa.ipynb` or `notebooks/original_kaggle_notebook.ipynb`: uses the trained YOLO model inside the video VQA pipeline.
 
-- `configs/default.yaml`: portable config for local paths, caches, models, training, RAG, and inference.
-- `configs/kaggle_train3.yaml`: override matching the original Kaggle `train3` dataset layout.
-- `src/traffic_video_vqa/data.py`: JSON annotation IO, split-by-video, and path rebasing helpers.
-- `src/traffic_video_vqa/preprocess.py`: VI→EN translation, frame extraction, Qwen message dataset conversion, mixed training data creation.
-- `src/traffic_video_vqa/training.py`: Qwen-VL LoRA fine-tuning with Unsloth.
-- `src/traffic_video_vqa/video.py`: frame sampling, CLIP-selected key frames, YOLO sign crops.
-- `src/traffic_video_vqa/rag.py`: BM25 + SBERT + CLIP traffic-sign retrieval.
-- `src/traffic_video_vqa/pipelines.py`: no-finetune, no-RAG, Micro-Hint RAG, Gated Micro RAG, and Full RAG inference.
-- `notebooks/original_kaggle_notebook.ipynb`: original notebook preserved for auditability.
+The converted code lives in `src/refactor`. The intended running order is YOLO first, then VQA.
 
-## Dataset Layout
-
-Expected challenge data:
-
-- Training: about 600 videos and about 1000 QA samples, with `train.json`, videos, answers, and support frames.
-- Public test: about 300 videos and about 500 QA samples, with questions and videos.
-- Private test: about 300 videos and about 500 QA samples, with questions and videos.
-
-Each annotation item is expected to contain:
-
-- `video_path`
-- `question`
-- `choices`
-- `answer` for training/eval data
-- `support_frames` when available
-
-The original notebook used Kaggle path `/kaggle/input/train3/train/train/train.json`. In this repo, that path is represented by config:
-
-```yaml
-paths:
-  data_root: /kaggle/input/train3/train
-  train_annotations: train/train.json
-  video_root: .
-```
-
-For local use, change only `paths.data_root`, `paths.train_annotations`, and `paths.video_root`.
-
-## Portable Path Handling
-
-The notebook stored absolute paths such as `/kaggle/input/...` inside generated JSON files. That is hard to reproduce outside Kaggle, so this repo centralizes path logic:
-
-- Annotation JSON is loaded through `resolve_annotation_video_paths`.
-- Relative `video_path` values are resolved against `video_root`, then `data_root`, then the annotation file folder.
-- Generated Qwen message datasets can rebase image paths with `rebase_qwen_message_images`.
-- Config controls all generated files: splits, translated JSON, frames, crops, cache files, models, and submission CSV.
-
-Recommended local workflow:
+## Main Entry Points
 
 ```bash
-cp configs/default.yaml configs/local.yaml
-# edit configs/local.yaml
-pip install -e ".[finetune]"
+# 1. Convert dataset, augment it, and run YOLO26 Optuna tuning.
+PYTHONPATH=src python3 -m refactor.run_yolo26
+
+# 2. Run the VQA flow after the YOLO model is available.
+PYTHONPATH=src python3 -m refactor.run_vqa
 ```
 
-## Pipelines
+The scripts preserve the original Kaggle paths by default, so they are mainly intended to run in the same Kaggle environment unless you edit the constants in the modules.
 
-Current best notebook result on the held-out 326-item split:
+## Refactor Layout
 
-- `no_rag`: 0.7393, 241/326.
-- `micro_hint_rag`: 0.7485, 244/326.
-- `gated_micro_rag`: 0.7485, 244/326, with 33 second-pass triggers.
+YOLO notebook conversion:
 
-### `no_finetune_prompt`
+- `src/refactor/run_yolo26.py`: runs the YOLO notebook flow in order.
+- `src/refactor/yolo26_config.py`: central YOLO paths and training defaults.
+- `src/refactor/yolo26_dataset.py`: converts the Vietnamese traffic-sign dataset into YOLO format and writes `dataset.yaml` / `data.yaml`.
+- `src/refactor/yolo26_train.py`: runs Optuna tuning with `YOLO("yolo26m.pt")` and saves best hyperparameters.
 
-Prompt-only baseline using the base VLM from `models.base_vlm`. It does not load the fine-tuned checkpoint and does not use RAG. It still uses CLIP for key-frame selection and YOLO crops, matching the visual input style of the stronger pipelines.
+VQA notebook conversion:
 
-```bash
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
-  --pipeline no_finetune_prompt
-```
+- `src/refactor/run_vqa.py`: runs the converted VQA notebook flow in order.
+- `src/refactor/kaggle_environment.py`: optional notebook-style dependency installation helper.
+- `src/refactor/translation_utils.py`: Vietnamese to English translation with disk cache.
+- `src/refactor/qwen_model.py`: Qwen/Unsloth loading, LoRA setup, training, and saving.
+- `src/refactor/videoqa_preprocess.py`: train/test split, video path prefixing, frame extraction, and Qwen message conversion.
+- `src/refactor/traffic_sign_vqa.py`: traffic-sign VQA JSONL normalization and translation.
+- `src/refactor/mixed_training.py`: mixes video QA and traffic-sign QA training data.
+- `src/refactor/vlm_inference.py`: shared VLM prompting, generation, and answer-label extraction.
+- `src/refactor/rag_retrieval.py`: English BM25 + SBERT + CLIP retrieval.
+- `src/refactor/micro_hint_pipeline.py`: YOLO crop extraction, key-frame selection, Micro-Hint RAG, and submission writing.
+- `src/refactor/pipeline_comparison.py`: single-sample comparison helper for no-RAG vs full-RAG inspection.
 
-### `no_rag`
+## Expected Kaggle Inputs
 
-Fine-tuned model, CLIP-selected key frames, YOLO crops, and the strongest no-RAG prompt format from the notebook. This is the main ablation baseline.
+The refactor keeps the notebook defaults:
 
-### `micro_hint_rag`
+- YOLO source dataset: `/kaggle/input/vietnamese-traffic-signs/archive`
+- YOLO converted dataset: `/kaggle/working/dataset_yolov11`
+- YOLO best hyperparameters: `/kaggle/working/best_hyperparameters.pt`
+- VQA train annotations: `/kaggle/input/train3/train/train/train.json`
+- Cached/generated VQA assets: `/kaggle/input/datasets/huyqn12/cropped-zalo` and `/kaggle/working`
+- Trained traffic-sign detector for VQA: `/kaggle/input/besttraffic-real/best (2).pt`
+- Final submission: `/kaggle/working/submission.csv`
 
-Best practical pipeline in the notebook. It avoids long retrieved rule blocks and injects only a strict micro hint when YOLO detects a sign class with numeric constraints such as speed, tonnage, or height.
-
-### `gated_micro_rag`
-
-Two-pass variant. First pass answers or returns `UNSURE`; second pass is triggered only when confidence is below `inference.gated_confidence_threshold` and a valid micro hint exists.
-
-### `full_rag`
-
-Traditional reference retrieval with BM25, SBERT dense retrieval, CLIP visual retrieval, CLIP text-to-image retrieval, and reciprocal-rank fusion. This is useful for inspection and ablations, but the compact Micro-Hint strategy was stronger in the notebook run.
-
-## Commands
-
-```bash
-# Split train/eval by video, avoiding video leakage.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml split
-
-# Translate and convert video QA samples into Qwen message format.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml convert-train
-
-# Mix video QA with optional traffic-sign VQA data.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml mix-train
-
-# Fine-tune Qwen-VL with LoRA.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
-
-# Prepare public/private test annotations.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml prepare-test \
-  --source /path/to/test.json
-
-# Run inference and write submission.csv.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
-  --pipeline micro_hint_rag
-```
-
-## Reproducing The Original Kaggle Notebook
+## Install
 
 ```bash
 pip install -r requirements.txt
-bash scripts/run_kaggle_train3.sh configs/kaggle_train3.yaml
 ```
 
-The original notebook is preserved under `notebooks/` and should be treated as a reference, not the main entry point.
+Inside Kaggle, the original notebook also installed some packages at runtime. That logic is available as:
+
+```bash
+PYTHONPATH=src python3 -m refactor.kaggle_environment
+```
+
+## Notes
+
+- `src/refactor` is a faithful notebook split: it keeps the original Kaggle assumptions and execution order.
+- The older `src/traffic_video_vqa` package and YAML configs are still present, but these README files document the newer notebook-to-`src/refactor` conversion.
+- If you run locally, update the hard-coded Kaggle paths in the relevant config/constants modules before executing the entry points.
+

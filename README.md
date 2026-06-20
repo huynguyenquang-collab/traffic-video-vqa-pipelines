@@ -1,26 +1,26 @@
-# Traffic Video VQA
+# Traffic Video VQA Pipelines
 
-This repository is the modular version of the original `original_kaggle_notebook.ipynb` Kaggle notebook. It keeps the strongest current pipelines from the notebook, moves hard-coded Kaggle paths into YAML config, and adds a no-finetune prompt-only baseline.
+This repo contains Python refactors of two Kaggle notebooks:
+
+- `notebooks/yolo26.ipynb`: train/tune the YOLO traffic-sign detector.
+- `notebooks/vqa.ipynb` / `notebooks/original_kaggle_notebook.ipynb`: run the video VQA pipeline using the trained YOLO model.
 
 Read the full docs:
 
 - [English README](README.en.md)
 - [Vietnamese README](README.vi.md)
 
-Quick start:
+Quick start in the original Kaggle-style environment:
 
 ```bash
-pip install -e ".[finetune]"
-cp configs/default.yaml configs/local.yaml
-# edit configs/local.yaml so paths.data_root points to your local dataset
+pip install -r requirements.txt
 
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml run-prep
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer --pipeline micro_hint_rag
+# Run YOLO first.
+PYTHONPATH=src python3 -m refactor.run_yolo26
+
+# Then run VQA.
+PYTHONPATH=src python3 -m refactor.run_vqa
 ```
 
-Kaggle quick install:
+Converted modules are in `src/refactor`. The older `src/traffic_video_vqa` package is still in the repo, but the current README documents the newer notebook split.
 
-```bash
-pip install -q -r requirements.txt
-```

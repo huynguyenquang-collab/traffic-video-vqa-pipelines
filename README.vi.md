@@ -1,131 +1,74 @@
-# Traffic Video VQA
+# Traffic Video VQA Pipelines
 
-Đây là bản repository hoá và module hoá từ notebook gốc `original_kaggle_notebook.ipynb`. Mục tiêu là giữ lại các pipeline đang cho kết quả tốt nhất, bỏ hard-code path kiểu Kaggle, và thêm một baseline không fine-tune chỉ dùng prompt.
+Repo này chứa bản chuyển đổi sang Python module từ hai notebook Kaggle:
 
-## Cấu Trúc Repo
+1. `notebooks/yolo26.ipynb`: train/tune YOLO để detect biển báo giao thông.
+2. `notebooks/vqa.ipynb` hoặc `notebooks/original_kaggle_notebook.ipynb`: dùng YOLO đã train để chạy pipeline Video VQA.
 
-- `configs/default.yaml`: config portable cho path local, cache, model, training, RAG và inference.
-- `configs/kaggle_train3.yaml`: config override đúng layout Kaggle `train3` trong notebook gốc.
-- `src/traffic_video_vqa/data.py`: đọc/ghi JSON annotation, split theo video, xử lý và rebase path.
-- `src/traffic_video_vqa/preprocess.py`: dịch VI→EN, extract frame, convert sang Qwen message dataset, trộn data train.
-- `src/traffic_video_vqa/training.py`: fine-tune Qwen-VL bằng LoRA/Unsloth.
-- `src/traffic_video_vqa/video.py`: chọn key frame bằng CLIP, crop biển báo bằng YOLO.
-- `src/traffic_video_vqa/rag.py`: retrieval biển báo bằng BM25 + SBERT + CLIP + RRF.
-- `src/traffic_video_vqa/pipelines.py`: các pipeline inference.
-- `notebooks/original_kaggle_notebook.ipynb`: notebook gốc để đối chiếu.
+Code sau khi tách notebook nằm trong `src/refactor`. Thứ tự chạy đúng là YOLO trước, VQA sau.
 
-## Dữ Liệu
-
-Dataset challenge thường có:
-
-- Training: khoảng 600 video, khoảng 1000 sample gồm câu hỏi, video, đáp án, support frames.
-- Public test: khoảng 300 video, khoảng 500 sample gồm câu hỏi và video.
-- Private test: khoảng 300 video, khoảng 500 sample gồm câu hỏi và video.
-
-Mỗi item trong annotation thường có:
-
-- `video_path`
-- `question`
-- `choices`
-- `answer` với train/eval
-- `support_frames` nếu có
-
-Notebook gốc dùng path Kaggle:
-
-```text
-/kaggle/input/train3/train/train/train.json
-```
-
-Trong repo này path đó được đưa vào config:
-
-```yaml
-paths:
-  data_root: /kaggle/input/train3/train
-  train_annotations: train/train.json
-  video_root: .
-```
-
-Khi chạy local, bạn chỉ cần sửa `paths.data_root`, `paths.train_annotations`, `paths.video_root` trong file config riêng.
-
-## Xử Lý Path Trong JSON
-
-Notebook gốc có nhiều JSON sinh ra chứa path tuyệt đối `/kaggle/input/...`, nên khi chuyển máy sẽ khó reproduce. Repo này xử lý theo hướng:
-
-- Khi load annotation, `video_path` tương đối sẽ được resolve theo `video_root`, sau đó `data_root`, sau đó folder chứa annotation.
-- Khi cần lưu split/cache, path output đi qua config.
-- Dataset Qwen message có image path bên trong `messages[].content[]`; helper `rebase_qwen_message_images` xử lý việc đổi prefix ảnh.
-- Toàn bộ split, translated JSON, frames, crops, embedding cache, model output, submission đều nằm trong `configs/*.yaml`.
-
-Khởi tạo local:
+## Entry Point Chính
 
 ```bash
-cp configs/default.yaml configs/local.yaml
-# sửa configs/local.yaml cho đúng máy của bạn
-pip install -e ".[finetune]"
+# 1. Convert dataset, augment data, và tune YOLO26 bằng Optuna.
+PYTHONPATH=src python3 -m refactor.run_yolo26
+
+# 2. Chạy pipeline VQA sau khi đã có YOLO model.
+PYTHONPATH=src python3 -m refactor.run_vqa
 ```
 
-## Các Pipeline
+Các script vẫn giữ path mặc định của Kaggle giống notebook gốc, nên phù hợp nhất để chạy trong cùng môi trường Kaggle. Nếu chạy local, bạn cần sửa các constant/path trong module tương ứng.
 
-Kết quả notebook hiện tại trên split eval 326 mẫu:
+## Cấu Trúc `src/refactor`
 
-- `no_rag`: 0.7393, 241/326.
-- `micro_hint_rag`: 0.7485, 244/326.
-- `gated_micro_rag`: 0.7485, 244/326, trigger lượt 2 là 33 lần.
+Phần chuyển đổi từ notebook YOLO:
 
-### `no_finetune_prompt`
+- `src/refactor/run_yolo26.py`: chạy flow YOLO theo đúng thứ tự notebook.
+- `src/refactor/yolo26_config.py`: gom path và tham số mặc định của YOLO.
+- `src/refactor/yolo26_dataset.py`: convert dataset biển báo Việt Nam sang format YOLO, augment data, ghi `dataset.yaml` và `data.yaml`.
+- `src/refactor/yolo26_train.py`: tune YOLO bằng Optuna với `YOLO("yolo26m.pt")`, lưu best hyperparameters.
 
-Baseline mới theo yêu cầu: dùng base VLM từ `models.base_vlm`, không load checkpoint fine-tuned, không dùng RAG. Pipeline vẫn dùng CLIP để chọn key frame và YOLO crop biển báo để input hình ảnh giống style pipeline mạnh hơn.
+Phần chuyển đổi từ notebook VQA:
 
-```bash
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
-  --pipeline no_finetune_prompt
-```
+- `src/refactor/run_vqa.py`: chạy flow VQA theo đúng thứ tự notebook.
+- `src/refactor/kaggle_environment.py`: helper optional để install package kiểu notebook Kaggle.
+- `src/refactor/translation_utils.py`: dịch Việt sang Anh và cache kết quả.
+- `src/refactor/qwen_model.py`: load Qwen/Unsloth, setup LoRA, train và save model.
+- `src/refactor/videoqa_preprocess.py`: split train/test theo video, thêm prefix path, extract frame, convert sang Qwen message format.
+- `src/refactor/traffic_sign_vqa.py`: normalize và dịch traffic-sign VQA JSONL.
+- `src/refactor/mixed_training.py`: trộn video QA với traffic-sign QA.
+- `src/refactor/vlm_inference.py`: hàm inference VLM, prompt chung, extract nhãn A/B/C/D.
+- `src/refactor/rag_retrieval.py`: retrieval tiếng Anh bằng BM25 + SBERT + CLIP.
+- `src/refactor/micro_hint_pipeline.py`: chọn key frame, crop biển báo bằng YOLO, Micro-Hint RAG, ghi submission.
+- `src/refactor/pipeline_comparison.py`: helper kiểm tra một sample giữa no-RAG và full-RAG.
 
-### `no_rag`
+## Input Kaggle Mặc Định
 
-Dùng model đã fine-tune, key frame chọn bằng CLIP, crop biển báo bằng YOLO, prompt format mạnh nhất của baseline trong notebook. Đây là baseline ablation chính.
+Bản refactor giữ các path mặc định từ notebook:
 
-### `micro_hint_rag`
+- YOLO source dataset: `/kaggle/input/vietnamese-traffic-signs/archive`
+- YOLO converted dataset: `/kaggle/working/dataset_yolov11`
+- YOLO best hyperparameters: `/kaggle/working/best_hyperparameters.pt`
+- VQA train annotations: `/kaggle/input/train3/train/train/train.json`
+- Cache/generated VQA assets: `/kaggle/input/datasets/huyqn12/cropped-zalo` và `/kaggle/working`
+- YOLO detector dùng trong VQA: `/kaggle/input/besttraffic-real/best (2).pt`
+- File submission cuối: `/kaggle/working/submission.csv`
 
-Pipeline thực dụng nhất hiện tại. Thay vì nhét một đoạn rule dài từ RAG vào prompt, pipeline chỉ thêm một micro hint rất ngắn khi YOLO phát hiện biển báo có thông tin số khó đọc như tốc độ, tải trọng, chiều cao.
-
-### `gated_micro_rag`
-
-Biến thể hai lượt. Lượt đầu trả lời trực tiếp hoặc `UNSURE`; lượt hai chỉ chạy khi confidence thấp hơn `inference.gated_confidence_threshold` và có micro hint hợp lệ.
-
-### `full_rag`
-
-Pipeline RAG đầy đủ: BM25 + SBERT dense retrieval + CLIP visual retrieval + CLIP text-to-image retrieval + reciprocal-rank fusion. Pipeline này hữu ích để audit/ablation, nhưng trong notebook hiện tại Micro-Hint RAG gọn hơn và cho kết quả tốt hơn.
-
-## Lệnh Chạy
-
-```bash
-# Split train/eval theo video, tránh leak cùng video qua hai split.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml split
-
-# Dịch và convert video QA sang Qwen message format.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml convert-train
-
-# Trộn video QA với traffic-sign VQA nếu bật trong config.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml mix-train
-
-# Fine-tune Qwen-VL bằng LoRA.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml train
-
-# Chuẩn bị public/private test.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml prepare-test \
-  --source /path/to/test.json
-
-# Inference và ghi submission.csv.
-PYTHONPATH=src python -m traffic_video_vqa.cli -c configs/local.yaml infer \
-  --pipeline micro_hint_rag
-```
-
-## Reproduce Trên Kaggle `train3`
+## Cài Đặt
 
 ```bash
 pip install -r requirements.txt
-bash scripts/run_kaggle_train3.sh configs/kaggle_train3.yaml
 ```
 
-Notebook gốc vẫn nằm trong `notebooks/`, nhưng entry point chính của repo là CLI/module trong `src/`.
+Trong Kaggle, notebook gốc có cell install package lúc runtime. Logic đó được tách ra ở:
+
+```bash
+PYTHONPATH=src python3 -m refactor.kaggle_environment
+```
+
+## Ghi Chú
+
+- `src/refactor` là bản tách notebook trung thành với flow gốc, vẫn giữ nhiều giả định/path Kaggle.
+- Package cũ `src/traffic_video_vqa` và các YAML config vẫn còn trong repo, nhưng README hiện tại mô tả bản refactor mới từ hai notebook.
+- Nếu muốn chạy local, hãy sửa các hard-coded Kaggle path trong module config/constants trước khi chạy entry point.
+
