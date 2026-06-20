@@ -1,0 +1,8 @@
+# Kaggle CUDA 12.4 images commonly ship torch 2.6.0+cu124 plus compiled
+# scientific packages built against NumPy 1.x. Keep the notebook runtime out of
+# the NumPy-2 ABI trap while still leaving requirements.txt version-free.
+numpy<2
+torch==2.6.*
+scikit-learn<1.6
+matplotlib<3.9
+protobuf<5

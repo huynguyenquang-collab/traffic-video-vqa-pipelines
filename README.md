@@ -22,5 +22,14 @@ PYTHONPATH=src python3 -m refactor.run_yolo26
 PYTHONPATH=src python3 -m refactor.run_vqa
 ```
 
-Converted modules are in `src/refactor`. The older `src/traffic_video_vqa` package is still in the repo, but the current README documents the newer notebook split.
+Kaggle stable install:
 
+```bash
+bash scripts/bootstrap_kaggle.sh
+bash scripts/run_kaggle_train3.sh
+```
+
+If Kaggle reports a broken `ensurepip`/`wrapt` during virtualenv creation, the
+bootstrap script automatically falls back to `/kaggle/working/tvqa_site` and
+`scripts/run_kaggle_train3.sh` will use that fallback through
+`/kaggle/working/tvqa_env.sh`.
