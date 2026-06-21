@@ -30,7 +30,7 @@ def sanitize_filename(value: str) -> str:
     return re.sub(r'[./\\:*?"<>|]', "_", value)
 
 
-def get_micro_ocr_hint(detected_classes: list[str]) -> str:
+def get_zoom_context_hint(detected_classes: list[str]) -> str:
     if not detected_classes:
         return ""
     strict_keywords = ["km/h", "speed limit", "tan", "ton", "meter", "m", "chieu cao", "tai trong"]
@@ -172,8 +172,8 @@ class MicroHintPipeline:
                 resp_c, _ = inference_with_logits_gating(model, tokenizer, all_vlm_images, prompt_c)
                 pred_c = extract_label(resp_c) or "A"
 
-                micro_hint = get_micro_ocr_hint(detected_classes)
-                prompt_a = f"{history_prompt}Question: {question}{micro_hint}\nChoices:\n" + "\n".join(choices) + "\n\nSelect the correct answer (A, B, C, or D)."
+                zoom_context_hint = get_zoom_context_hint(detected_classes)
+                prompt_a = f"{history_prompt}Question: {question}{zoom_context_hint}\nChoices:\n" + "\n".join(choices) + "\n\nSelect the correct answer (A, B, C, or D)."
                 resp_a, _ = inference_with_logits_gating(model, tokenizer, all_vlm_images, prompt_a)
                 pred_a = extract_label(resp_a) or "A"
 
@@ -186,7 +186,7 @@ class MicroHintPipeline:
                     instruction=ITERATIVE_FIRST_PASS_INSTRUCTION,
                 )
                 pred_b = extract_label(resp_b1) or "A"
-                if confidence < 0.85 and micro_hint:
+                if confidence < 0.85 and zoom_context_hint:
                     rag_triggered += 1
                     resp_b2, _ = inference_with_logits_gating(model, tokenizer, all_vlm_images, prompt_a)
                     pred_b = extract_label(resp_b2) or "A"
@@ -225,4 +225,3 @@ class MicroHintPipeline:
             writer.writeheader()
             writer.writerows(best_results)
         return submission_path
-
