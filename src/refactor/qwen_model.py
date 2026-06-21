@@ -6,16 +6,17 @@ from pathlib import Path
 
 
 INPUT_BASE = Path("/kaggle/input/datasets/huyqn12/cropped-zalo")
-CACHED_MIXED_MODEL = INPUT_BASE / "qwen2-vl-7b-mixed-en"
+MIXED_MODEL_DIRNAME = "qwen3-vl-8b-mixed-en"
+CACHED_MIXED_MODEL = INPUT_BASE / MIXED_MODEL_DIRNAME
 BASE_QWEN_MODEL = "/kaggle/input/qwen-3-vl/transformers/8b-instruct/1"
 
 
 def load_qwen_model(input_base: Path = INPUT_BASE, base_model: str = BASE_QWEN_MODEL):
     from unsloth import FastVisionModel
 
-    cached_mixed_model = input_base / "qwen2-vl-7b-mixed-en"
+    cached_mixed_model = input_base / MIXED_MODEL_DIRNAME
     if cached_mixed_model.is_dir():
-        print("Loading cached qwen2-vl-7b-mixed-en; skipping training.")
+        print(f"Loading cached {MIXED_MODEL_DIRNAME}; skipping training.")
         model, tokenizer = FastVisionModel.from_pretrained(
             str(cached_mixed_model),
             load_in_4bit=True,
@@ -88,7 +89,7 @@ def setup_lora_trainer(model, tokenizer, mixed_train, mixed_eval, skip_training:
     return model, trainer
 
 
-def train_and_save(model, tokenizer, trainer, skip_training: bool, output_dir: str = "qwen2-vl-7b-mixed-en"):
+def train_and_save(model, tokenizer, trainer, skip_training: bool, output_dir: str = MIXED_MODEL_DIRNAME):
     if skip_training:
         print("Skipping trainer.train() and save; mixed model already cached.")
         return None
@@ -97,4 +98,3 @@ def train_and_save(model, tokenizer, trainer, skip_training: bool, output_dir: s
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
     return trainer_stats
-

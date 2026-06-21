@@ -21,8 +21,8 @@ paths:
 
 models:
   base_vlm: /kaggle/input/qwen-3-vl/transformers/8b-instruct/1
-  cached_finetuned_vlm: /kaggle/input/datasets/huyqn12/cropped-zalo/qwen2-vl-7b-mixed-en
-  output_finetuned_vlm: /kaggle/working/qwen2-vl-7b-mixed-en
+  cached_finetuned_vlm: /kaggle/input/datasets/huyqn12/cropped-zalo/qwen3-vl-8b-mixed-en
+  output_finetuned_vlm: /kaggle/working/qwen3-vl-8b-mixed-en
   yolo_weights: /kaggle/input/besttraffic-real/best (2).pt
 
 traffic_sign_vqa:

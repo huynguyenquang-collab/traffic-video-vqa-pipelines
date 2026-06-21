@@ -34,9 +34,9 @@ paths:
 models:
   # Original notebook used Kaggle input:
   # /kaggle/input/qwen-3-vl/transformers/8b-instruct/1
-  base_vlm: Qwen/Qwen2.5-VL-7B-Instruct
-  cached_finetuned_vlm: ./artifacts/qwen-vl-mixed-en
-  output_finetuned_vlm: ./outputs/qwen-vl-mixed-en
+  base_vlm: Qwen/Qwen3-VL-8B-Instruct
+  cached_finetuned_vlm: ./artifacts/qwen3-vl-8b-mixed-en
+  output_finetuned_vlm: ./outputs/qwen3-vl-8b-mixed-en
   clip: openai/clip-vit-base-patch32
   sentence_encoder: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
   yolo_weights: ./artifacts/best_traffic.pt
